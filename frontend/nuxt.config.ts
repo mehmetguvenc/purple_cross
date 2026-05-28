@@ -7,6 +7,9 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   devServer: { port: 8080 },
   modules: ["@nuxt/eslint", "@primevue/nuxt-module"],
+  // Atomic structure lives under components/{atoms,molecules,organisms}.
+  // pathPrefix off so I use <AppLogo /> instead of <AtomsAppLogo />. Names need to stay unique across dirs.
+  components: [{ path: "~/components", pathPrefix: false }],
   // Populated from NUXT_PUBLIC_API_BASE at runtime
   runtimeConfig: {
     public: {

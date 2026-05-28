@@ -1,2 +1,75 @@
+/* Fonts. Geist for UI text, Poppins for headings. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap");
+
 @import "tailwindcss";
 @plugin "tailwindcss-primeui";
+
+/* Brand tokens. Tailwind v4 turns each --color-* into utilities automatically:
+   --color-primary -> bg-primary / text-primary / border-primary, etc. */
+@theme {
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand */
+  --color-primary: #3d2645;
+  --color-primary-strong: #2a1830;
+  --color-primary-muted: #e8e2ee;
+
+  --color-accent: #b8651f;
+
+  /* Surfaces */
+  --color-background: #faf7f2;
+  --color-surface-muted: #f3ede4;
+  --color-surface-strong: #e8e0d2;
+
+  /* Text */
+  --color-foreground: #1a1714;
+  --color-foreground-soft: #3d3a36;
+  --color-foreground-muted: #7a7670;
+  --color-foreground-subtle: #b8b3ab;
+
+  /* Lines */
+  --color-border: #ece5d8;
+}
+
+@layer base {
+  /* Default border color tracks the brand token, so `border` alone uses the right line color. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+}
+
+/* Semantic typography classes. Reach for these instead of stacking size/weight/leading utilities each time. */
+@layer components {
+  .heading-1 {
+    @apply font-display text-4xl font-semibold tracking-tight leading-tight;
+  }
+  .heading-2 {
+    @apply font-display text-3xl font-semibold tracking-tight leading-snug;
+  }
+  .heading-3 {
+    @apply font-display text-2xl font-medium tracking-tight leading-snug;
+  }
+  .heading-4 {
+    @apply font-display text-xl font-medium tracking-tight leading-snug;
+  }
+
+  .body-lg {
+    @apply font-sans text-lg leading-relaxed text-foreground-soft;
+  }
+  .body {
+    @apply font-sans text-base leading-relaxed text-foreground-soft;
+  }
+  .body-sm {
+    @apply font-sans text-sm leading-normal text-foreground-soft;
+  }
+
+  .caption {
+    @apply font-sans text-xs font-medium uppercase tracking-wider text-foreground-muted;
+  }
+  .label {
+    @apply font-sans text-sm font-medium text-foreground;
+  }
+}

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from "@nestjs/common";
 import { Employee, Prisma } from "@prisma/client";
 import { PrismaService } from "@/prisma/prisma.service";
 import { CreateEmployeeDto } from "@/employees/dto/create-employee.dto";
@@ -34,6 +34,10 @@ export class EmployeesService {
   // I use a transaction to count and find the employees to ensure that the total count is consistent with the items returned.
   async list(query: ListEmployeesDto): Promise<PaginatedEmployees> {
     const { page, pageSize, search, department, occupation, dateOfEmployment, terminationDate, orderBy, sortOrder } = query;
+
+    //Simulating a delay of 5 seconds to test the loading state in the frontend.
+    const timeout = 1000;
+    await new Promise((resolve) => setTimeout(resolve, timeout));
 
     const where: Prisma.EmployeeWhereInput = {
       deletedAt: null,

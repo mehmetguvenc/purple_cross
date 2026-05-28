@@ -5,6 +5,9 @@ import { AppModule } from "@/app.module";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Frontend (dev: localhost:8080) calls this API from the browser, so CORS is required.
+  app.enableCors();
+
   // every route lives under `/api` route
   app.setGlobalPrefix("api");
 

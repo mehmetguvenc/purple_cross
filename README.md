@@ -1,5 +1,34 @@
 # Purple Cross
 
+## Frontend
+
+### Tech Stack
+
+- Nuxt 4
+- TypeScript
+- PrimeVue (Aura theme)
+- Tailwind CSS
+- Zod
+- date-fns
+
+### Setup
+
+All commands below run from `frontend/`.
+
+```sh
+npm install
+```
+
+### Run
+
+```sh
+npm run dev   # http://localhost:8080
+```
+
+### Env
+
+- `.env`: `NUXT_PUBLIC_API_BASE` (server runs at "http://localhost:3000/api", change port if needed)
+
 ## Server
 
 ### Tech Stack

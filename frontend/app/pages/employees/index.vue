@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { employees } from "@/lib/employees";
 
-const { data, pending, error } = await useLazyAsyncData("emp", () => employees.list({ page: 1, pageSize: 10 }), { server: false });
+// useLazyAsyncData is used instead of useAsyncData to prevent SSR blocking on this page
+const { data, pending, error } = await useLazyAsyncData("emp", () => employees.list({ page: 1, pageSize: 10 }));
 </script>
 
 <template>

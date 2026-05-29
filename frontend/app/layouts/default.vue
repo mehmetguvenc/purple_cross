@@ -15,5 +15,6 @@ const loggedInUser = ref({
         <slot />
       </main>
     </div>
+    <MobileDrawer />
   </div>
 </template>

@@ -18,17 +18,20 @@ const items: MenuItem[] = [
   {
     label: "Logout",
     icon: "pi pi-sign-out",
-    // No auth state yet, so this just navigates. Will clear session cookie when auth lands.
+    // No auth state implemented, so this just navigates.
     command: () => navigateTo("/login"),
   },
 ];
 
 const onToggle = (e: MouseEvent) => menu.value?.toggle(e);
+
+// Menu makes this a multi-root, so attrs go to the button manually
+defineOptions({ inheritAttrs: false });
 </script>
 
 <template>
-  <button type="button"
-    class="inline-flex items-center gap-2 px-2.5 py-2 rounded-full bg-surface-muted hover:bg-surface-strong transition-colors cursor-pointer"
+  <button v-bind="$attrs" type="button"
+    class="flex items-center gap-2 bg-surface-muted px-2.5 py-2 rounded-full cursor-pointer hover:bg-surface-strong transition-colors"
     aria-haspopup="true" @click="onToggle">
     <Avatar :label="initial" shape="circle" class="bg-primary text-white" />
     <span class="body-sm text-foreground">{{ user.name }}</span>

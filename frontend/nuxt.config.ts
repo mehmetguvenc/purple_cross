@@ -1,5 +1,25 @@
+import { definePreset } from "@primeuix/themes";
 import Aura from "@primeuix/themes/aura";
 import tailwindcss from "@tailwindcss/vite";
+
+// Aura retinted to our aubergine brand (500 = brand) so PrimeVue matches the `primary` token.
+const Aubergine = definePreset(Aura, {
+  semantic: {
+    primary: {
+      50: "#f4eff6",
+      100: "#e8e2ee",
+      200: "#cdbcd6",
+      300: "#ad94bb",
+      400: "#7d5a90",
+      500: "#3d2645",
+      600: "#351f3c",
+      700: "#2a1830",
+      800: "#221428",
+      900: "#1a0f1f",
+      950: "#100913",
+    },
+  },
+});
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -23,7 +43,7 @@ export default defineNuxtConfig({
   primevue: {
     options: {
       theme: {
-        preset: Aura, // I went with Aura because it's PrimeVue's default theme. Looks modern and feels like a good fit for the domain.
+        preset: Aubergine, // Aura base, retinted to the aubergine brand (see preset above).
         options: {
           darkModeSelector: "[data-theme='dark']",
           cssLayer: {

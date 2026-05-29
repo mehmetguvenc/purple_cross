@@ -39,7 +39,7 @@ export interface ListEmployeesQuery {
   occupation?: string;
   dateOfEmployment?: string;
   terminationDate?: string;
-  orderBy?: "id" | "fullName" | "code" | "department" | "occupation";
+  orderBy?: "id" | "fullName" | "code" | "department" | "occupation" | "dateOfEmployment" | "terminationDate";
   sortOrder?: "asc" | "desc";
 }
 

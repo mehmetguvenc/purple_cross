@@ -7,10 +7,12 @@ import { ListEmployeesDto } from "@/employees/dto/list-employees.dto";
 
 export interface PaginatedEmployees {
   items: Employee[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
 }
 
 @Injectable()
@@ -49,9 +51,13 @@ export class EmployeesService {
       ...(dateOfEmployment && { dateOfEmployment: { gte: dateOfEmployment } }),
       // filter by termination date if provided
       ...(terminationDate && { terminationDate: { gte: terminationDate } }),
-      // search by fullName or code if provided. This search is case-insensitive
+      // global keyword search across name, department and occupation (case-insensitive on SQLite).
       ...(search && {
-        OR: [{ fullName: { contains: search } }, { code: { contains: search } }],
+        OR: [
+          { fullName: { contains: search } },
+          { department: { contains: search } },
+          { occupation: { contains: search } },
+        ],
       }),
     };
 
@@ -67,10 +73,12 @@ export class EmployeesService {
 
     return {
       items,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
+      meta: {
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
     };
   }
 

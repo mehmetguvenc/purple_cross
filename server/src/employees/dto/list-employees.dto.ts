@@ -17,7 +17,7 @@ export const ListEmployeesSchema = z.object({
   // Filter by termination date
   terminationDate: z.coerce.date().optional(),
   // Sorting
-  orderBy: z.enum(["id", "fullName", "code", "department", "occupation"]).default("id"),
+  orderBy: z.enum(["id", "fullName", "code", "department", "occupation", "dateOfEmployment", "terminationDate"]).default("id"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });
 

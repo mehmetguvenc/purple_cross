@@ -35,22 +35,23 @@ export class EmployeesService {
   // paginated, filtered, sorted list of active employees.
   // I use a transaction to count and find the employees to ensure that the total count is consistent with the items returned.
   async list(query: ListEmployeesDto): Promise<PaginatedEmployees> {
-    const { page, pageSize, search, department, occupation, dateOfEmployment, terminationDate, orderBy, sortOrder } = query;
+    const { page, pageSize, search, department, occupation, employmentStatus, terminationStatus, orderBy, sortOrder } = query;
 
-    //Simulating a delay of 5 seconds to test the loading state in the frontend.
-    const timeout = 1000;
-    await new Promise((resolve) => setTimeout(resolve, timeout));
+    // Status filters are relative to "now": someone counts as currently employed once their
+    // start date has passed, and terminated once their termination date has.
+    const now = new Date();
 
     const where: Prisma.EmployeeWhereInput = {
       deletedAt: null,
-      // filter by department if provided
-      ...(department && { department }),
-      // filter by occupation if provided
-      ...(occupation && { occupation }),
-      // filter by date of employment if provided
-      ...(dateOfEmployment && { dateOfEmployment: { gte: dateOfEmployment } }),
-      // filter by termination date if provided
-      ...(terminationDate && { terminationDate: { gte: terminationDate } }),
+      // Partial, case-insensitive match (SQLite) so "eng" finds "Engineering".
+      ...(department && { department: { contains: department } }),
+      ...(occupation && { occupation: { contains: occupation } }),
+      // Employment status: already started vs. starts in the future.
+      ...(employmentStatus === "current" && { dateOfEmployment: { lte: now } }),
+      ...(employmentStatus === "soon" && { dateOfEmployment: { gt: now } }),
+      // Termination status: already terminated vs. scheduled to be.
+      ...(terminationStatus === "terminated" && { terminationDate: { lte: now } }),
+      ...(terminationStatus === "scheduled" && { terminationDate: { gt: now } }),
       // global keyword search across name, department and occupation (case-insensitive on SQLite).
       ...(search && {
         OR: [

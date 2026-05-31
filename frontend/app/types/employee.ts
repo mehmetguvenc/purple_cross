@@ -38,10 +38,19 @@ export interface ListEmployeesQuery {
   search?: string;
   department?: string;
   occupation?: string;
-  dateOfEmployment?: string;
-  terminationDate?: string;
+  employmentStatus?: "current" | "soon";
+  terminationStatus?: "terminated" | "scheduled";
   orderBy?: "id" | "fullName" | "code" | "department" | "occupation" | "dateOfEmployment" | "terminationDate";
   sortOrder?: "asc" | "desc";
+}
+
+// Values the filter bar holds. Mapped to the query params above when the list refetches.
+export interface EmployeeFilterValues {
+  search: string;
+  occupation: string;
+  department: string;
+  employmentStatus: "current" | "soon" | null;
+  terminationStatus: "terminated" | "scheduled" | null;
 }
 
 export type PaginatedEmployees = Paginated<Employee>;

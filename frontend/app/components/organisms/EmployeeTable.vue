@@ -2,48 +2,22 @@
 import { isFuture } from "date-fns";
 import type { Employee } from "@/types/employee";
 
-// Dumb table: props in, events out. The template owns the query.
-const props = defineProps<{
+defineProps<{
   employees: Employee[];
   loading: boolean;
   total: number;
   page: number;
   pageSize: number;
-  sortField: string;
-  sortOrder: "asc" | "desc";
 }>();
 
 const emit = defineEmits<{
-  search: [value: string];
   pageChange: [payload: { page: number; pageSize: number }];
-  sortChange: [payload: { field: string; order: "asc" | "desc" }];
   view: [employee: Employee];
   edit: [employee: Employee];
   remove: [employee: Employee];
 }>();
 
-// DataTable is 0-based and uses 1/-1 for sort; our query is 1-based and asc/desc.
-const first = computed(() => (props.page - 1) * props.pageSize);
-
-// sort order, by default ascending
-const primeSortOrder = computed(() => (props.sortOrder === "asc" ? 1 : -1));
-
-// Debounced so query doesn't trigger on every keystroke
-const searchText = ref("");
-let searchTimer: ReturnType<typeof setTimeout> | undefined;
-watch(searchText, (value) => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => emit("search", value.trim()), 300);
-});
-
-function onPage(event: { page: number; rows: number }) {
-  emit("pageChange", { page: event.page + 1, pageSize: event.rows });
-}
-function onSort(event: { sortField: string; sortOrder: number }) {
-  emit("sortChange", { field: event.sortField, order: event.sortOrder === 1 ? "asc" : "desc" });
-}
-
-// Date shown as a status label, not the raw date. null = no date (cell shows a dash).
+// Date shown as a status label (current vs upcoming), not the raw date.
 function employmentStatus(date: string | null) {
   if (!date) return null;
   return isFuture(new Date(date))
@@ -56,6 +30,11 @@ function terminationStatus(date: string | null) {
     ? { label: "To be terminated", tone: "warn" as const }
     : { label: "Terminated", tone: "danger" as const };
 }
+
+// Lazy: the server already did the filtering, sorting and paging, so we just show the page.
+function onPage(event: { page: number; rows: number }) {
+  emit("pageChange", { page: event.page + 1, pageSize: event.rows });
+}
 </script>
 
 <template>
@@ -66,32 +45,22 @@ function terminationStatus(date: string | null) {
     paginator
     data-key="id"
     :rows="pageSize"
-    :first="first"
+    :first="(page - 1) * pageSize"
     :total-records="total"
     :rows-per-page-options="[10, 20, 50]"
-    :sort-field="sortField"
-    :sort-order="primeSortOrder"
+    :pt="{
+      column: {
+        columnTitle: { class: 'caption' },
+        bodyCell: { class: 'body-sm' },
+      },
+    }"
     @page="onPage"
-    @sort="onSort"
   >
-    <template #header>
-      <div class="flex justify-end">
-        <IconField>
-          <InputIcon class="pi pi-search" />
-          <InputText
-            v-model="searchText"
-            placeholder="Search name, department or occupation…"
-            class="w-72"
-          />
-        </IconField>
-      </div>
-    </template>
+    <Column field="fullName" header="Full Name" />
+    <Column field="occupation" header="Occupation" />
+    <Column field="department" header="Department" />
 
-    <Column field="fullName" header="Full Name" sortable />
-    <Column field="occupation" header="Occupation" sortable />
-    <Column field="department" header="Department" sortable />
-
-    <Column field="dateOfEmployment" header="Date of Employment" sortable>
+    <Column field="dateOfEmployment" header="Date of Employment">
       <template #body="{ data }">
         <StatusTag
           v-if="employmentStatus(data.dateOfEmployment)"
@@ -101,7 +70,7 @@ function terminationStatus(date: string | null) {
       </template>
     </Column>
 
-    <Column field="terminationDate" header="Termination Date" sortable>
+    <Column field="terminationDate" header="Termination Date">
       <template #body="{ data }">
         <StatusTag
           v-if="terminationStatus(data.terminationDate)"
@@ -128,7 +97,8 @@ function terminationStatus(date: string | null) {
 </template>
 
 <style scoped>
-/* Airy, clean table: white card, bold dark headers, hairline row dividers, generous spacing. */
+/* Airy, clean table: white card, hairline row dividers, generous spacing.
+   Header and cell typography come from the caption/body-sm classes (applied via :pt). */
 .p-datatable {
   border: 1px solid var(--color-border);
   border-radius: 1rem;
@@ -136,68 +106,23 @@ function terminationStatus(date: string | null) {
   overflow: hidden;
 }
 
-:deep(.p-datatable-header) {
-  background: #fff;
-  border-bottom: 1px solid var(--color-border);
-  padding: 1rem 1.25rem;
-}
-
+/* Keep every header and cell on a single line. Names like "Software Engineer"
+   stay scannable instead of wrapping; when that makes the table wider than a
+   phone, the container scrolls sideways rather than stacking the text. */
 :deep(.p-datatable-thead > tr > th) {
   background: #fff;
-  padding: 0.9rem 1rem;
+  padding: 1rem;
   border-bottom: 1px solid var(--color-border);
-}
-
-:deep(.p-datatable-column-title) {
-  font-family: var(--font-sans);
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-foreground);
+  white-space: nowrap;
 }
 
 :deep(.p-datatable-tbody > tr > td) {
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
-  color: var(--color-foreground-soft);
-}
-
-/* Keep the name on one line; it's the row's anchor. */
-:deep(.p-datatable-tbody > tr > td:first-child) {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--color-surface-muted);
   white-space: nowrap;
-  color: var(--color-foreground);
-  font-weight: 500;
-}
-
-:deep(.p-datatable-tbody > tr) {
-  transition: background-color 0.15s ease;
 }
 
 :deep(.p-datatable-tbody > tr:hover) {
-  background: var(--color-surface-muted);
-}
-
-/* Centered footer with circular page controls, like the reference. */
-:deep(.p-datatable-paginator-bottom) {
-  background: #fff;
-  border-top: 1px solid var(--color-border);
-  padding: 0.85rem;
-}
-
-:deep(.p-paginator-page),
-:deep(.p-paginator-first),
-:deep(.p-paginator-prev),
-:deep(.p-paginator-next),
-:deep(.p-paginator-last) {
-  border-radius: 9999px;
-}
-
-:deep(.p-paginator-page-selected) {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-:deep(.p-datatable-mask) {
-  background: color-mix(in srgb, #fff 65%, transparent);
-  backdrop-filter: blur(1px);
+  background: var(--color-surface-strong);
 }
 </style>

@@ -6,7 +6,8 @@ export interface ApiOptions {
   headers?: object;
 }
 
-// Wraps $fetch with the API base URL so I don't pass it on every call
+// Wraps fetch with the API base URL so I don't pass it on every call
+// The reason for that, if custom headers are needed in the future it would be easier to update them from one place.
 export function api<T>(path: string, opts?: ApiOptions): Promise<T> {
   return $fetch<T>(path, {
     baseURL: useRuntimeConfig().public.apiBase,

@@ -12,10 +12,10 @@ export const ListEmployeesSchema = z.object({
   department: z.string().trim().min(1).optional(),
   // Filter by occupation
   occupation: z.string().trim().min(1).optional(),
-  // Filter by date of employment
-  dateOfEmployment: z.coerce.date().optional(),
-  // Filter by termination date
-  terminationDate: z.coerce.date().optional(),
+  // Filter by employment status, derived from dateOfEmployment relative to today
+  employmentStatus: z.enum(["current", "soon"]).optional(),
+  // Filter by termination status, derived from terminationDate relative to today
+  terminationStatus: z.enum(["terminated", "scheduled"]).optional(),
   // Sorting
   orderBy: z.enum(["id", "fullName", "code", "department", "occupation", "dateOfEmployment", "terminationDate"]).default("id"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),

@@ -21,7 +21,8 @@ export const createEmployeeSchema = z.object({
   fullName: z.string().trim().min(1, "Full name is required"),
   occupation: z.string().trim().min(1, "Occupation is required"),
   department: z.string().trim().min(1, "Department is required"),
-  dateOfEmployment: z.string().optional(),
+  // The API rejects a create without a hire date, so it's mandatory here too.
+  dateOfEmployment: z.string().min(1, "Date of employment is required"),
   terminationDate: z.string().optional(),
 });
 export type CreateEmployeeDto = z.infer<typeof createEmployeeSchema>;

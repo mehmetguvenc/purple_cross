@@ -101,11 +101,54 @@ function onRemove(emp: Employee) {
     },
   });
 }
+
+// Export with the current filters and sort, without pagination.
+function onExport() {
+  const query = params();
+  delete query.page;
+  delete query.pageSize;
+  const link = document.createElement("a");
+  link.href = employees.exportUrl(query);
+  link.click();
+}
+
+// Hidden input behind the styled button.
+const fileInput = ref<HTMLInputElement | null>(null);
+
+async function onImport(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const text = await file.text();
+  try {
+    const result = await employees.importCsv(text);
+    toast.add({
+      severity: "success",
+      summary: "Import complete",
+      detail: `${result.created} added, ${result.updated} updated, ${result.skipped} skipped`,
+      life: 4000,
+    });
+    await refresh();
+  } catch {
+    toast.add({ severity: "error", summary: "Import failed", detail: "Check the file and try again", life: 3000 });
+  }
+  // Reset so the same file can be picked again.
+  input.value = "";
+}
 </script>
 
 <template>
   <section class="p-2 md:p-4">
-    <h1 class="heading-2 mb-6">Employees</h1>
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <h1 class="heading-2">Employees</h1>
+
+      <div class="flex gap-2">
+        <input ref="fileInput" type="file" accept=".csv" class="hidden" @change="onImport">
+        <Button label="Import CSV" icon="pi pi-upload" severity="primary" size="small" @click="fileInput?.click()" />
+        <Button label="Export CSV" icon="pi pi-download" severity="primary" size="small" @click="onExport" />
+      </div>
+    </div>
 
     <div v-if="error" class="body-sm rounded-lg border bg-surface-muted p-6 text-foreground-muted">
       Something went wrong while loading employees.

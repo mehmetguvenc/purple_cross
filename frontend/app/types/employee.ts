@@ -54,3 +54,10 @@ export interface EmployeeFilterValues {
 }
 
 export type PaginatedEmployees = Paginated<Employee>;
+
+// Result of a CSV import.
+export interface ImportResult {
+  created: number;
+  updated: number;
+  skipped: number;
+}

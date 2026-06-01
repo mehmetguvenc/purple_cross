@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from "@nestjs/common";
+import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
 import { Employee, Prisma } from "@prisma/client";
+import Papa from "papaparse";
 import { PrismaService } from "@/prisma/prisma.service";
-import { CreateEmployeeDto } from "@/employees/dto/create-employee.dto";
+import { CreateEmployeeDto, CreateEmployeeSchema } from "@/employees/dto/create-employee.dto";
 import { UpdateEmployeeDto } from "@/employees/dto/update-employee.dto";
 import { ListEmployeesDto } from "@/employees/dto/list-employees.dto";
 
@@ -13,6 +14,17 @@ export interface PaginatedEmployees {
     pageSize: number;
     totalPages: number;
   };
+}
+
+export interface ImportSummary {
+  created: number;
+  updated: number;
+  skipped: number;
+}
+
+// Day-only date for the CSV (YYYY-MM-DD).
+function toDay(date: Date): string {
+  return date.toISOString().slice(0, 10);
 }
 
 @Injectable()
@@ -32,16 +44,13 @@ export class EmployeesService {
     return this.prisma.employee.create({ data: dto });
   }
 
-  // paginated, filtered, sorted list of active employees.
-  // I use a transaction to count and find the employees to ensure that the total count is consistent with the items returned.
-  async list(query: ListEmployeesDto): Promise<PaginatedEmployees> {
-    const { page, pageSize, search, department, occupation, employmentStatus, terminationStatus, orderBy, sortOrder } = query;
-
-    // Status filters are relative to "now": someone counts as currently employed once their
-    // start date has passed, and terminated once their termination date has.
+  // Shared by the list and the CSV export so both filter the same way.
+  // Status filters are relative to "now".
+  private buildWhere(query: ListEmployeesDto): Prisma.EmployeeWhereInput {
+    const { search, department, occupation, employmentStatus, terminationStatus } = query;
     const now = new Date();
 
-    const where: Prisma.EmployeeWhereInput = {
+    return {
       deletedAt: null,
       // Partial, case-insensitive match (SQLite) so "eng" finds "Engineering".
       ...(department && { department: { contains: department } }),
@@ -61,6 +70,13 @@ export class EmployeesService {
         ],
       }),
     };
+  }
+
+  // paginated, filtered, sorted list of active employees.
+  // I use a transaction to count and find the employees to ensure that the total count is consistent with the items returned.
+  async list(query: ListEmployeesDto): Promise<PaginatedEmployees> {
+    const { page, pageSize, orderBy, sortOrder } = query;
+    const where = this.buildWhere(query);
 
     const [total, items] = await this.prisma.$transaction([
       this.prisma.employee.count({ where }),
@@ -81,6 +97,62 @@ export class EmployeesService {
         totalPages: Math.ceil(total / pageSize),
       },
     };
+  }
+
+  // All filtered employees as CSV (no pagination).
+  async exportCsv(query: ListEmployeesDto): Promise<string> {
+    const items = await this.prisma.employee.findMany({
+      where: this.buildWhere(query),
+      orderBy: { [query.orderBy]: query.sortOrder },
+    });
+
+    const rows = items.map((employee) => ({
+      code: employee.code,
+      fullName: employee.fullName,
+      occupation: employee.occupation,
+      department: employee.department,
+      dateOfEmployment: toDay(employee.dateOfEmployment),
+      terminationDate: employee.terminationDate ? toDay(employee.terminationDate) : "",
+    }));
+
+    return Papa.unparse(rows);
+  }
+
+  // Upsert each CSV row by `code`. Invalid rows are skipped.
+  async importCsv(csv: string): Promise<ImportSummary> {
+    const parsed = Papa.parse<Record<string, string>>(csv.trim(), {
+      header: true,
+      skipEmptyLines: true,
+    });
+
+    const summary: ImportSummary = { created: 0, updated: 0, skipped: 0 };
+
+    const rows = parsed.data;
+    for (const raw of rows) {
+      // Blank cells arrive as ""; treat as missing so optional fields validate.
+      const row = Object.fromEntries(Object.entries(raw).map(([key, value]) => [key, value === "" ? undefined : value]));
+      const result = CreateEmployeeSchema.safeParse(row);
+      if (!result.success) {
+        summary.skipped++;
+        continue;
+      }
+
+      const data = result.data;
+      const existing = await this.prisma.employee.findFirst({
+        where: { code: data.code, deletedAt: null },
+        select: { id: true },
+      });
+
+      if (existing) {
+        await this.prisma.employee.update({ where: { id: existing.id }, data });
+        summary.updated++;
+      } else {
+        await this.prisma.employee.create({ data });
+        summary.created++;
+      }
+    }
+
+    return summary;
   }
 
   // Find an employee by id. Only active employees are returned.
